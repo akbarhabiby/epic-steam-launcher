@@ -36,6 +36,8 @@ func getPID(name string) (uint32, error) {
 	}
 }
 
+func sleep() { time.Sleep(time.Second * 5) }
+
 func main() {
 	runtime.GOMAXPROCS(1)
 	if len(os.Args[1:]) != 2 {
@@ -52,13 +54,24 @@ func main() {
 	if exeName == "" {
 		exit(1, fmt.Errorf("Empty EXE name"))
 	}
-	go exec.Command(epicUrl).Run()
 	fmt.Printf("Starting %s\n", epicUrl)
-	time.Sleep(time.Second * 5)
+	go exec.Command("cmd", "/C", fmt.Sprintf("start %s", epicUrl)).Run()
 	fmt.Printf("Checking for %s\n", exeName)
-	pid, e := getPID(exeName)
-	if e != nil {
-		exit(2, e)
+
+	try := 1
+	var pid uint32 = 0
+	var e error
+	for {
+		sleep()
+		fmt.Printf("Try.. %d\n", try)
+		pid, e = getPID(exeName)
+		if e == nil {
+			break
+		}
+		if try > 10 { // max try
+			exit(2, e)
+		}
+		try++
 	}
 	fmt.Printf("%s is running with PID %d\n", exeName, pid)
 	fmt.Printf("Checking if PID %d is running\n", pid)
